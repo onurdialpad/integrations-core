@@ -27,18 +27,17 @@ from .common import (
 @pytest.mark.usefixtures("dd_environment")
 def test_check_cert_expiration(http_check):
     cert_path = os.path.join(HERE, 'fixtures', 'cacert.pem')
-    check_hostname = True
 
     # up
     instance = {'url': 'https://valid.mock/'}
-    status, days_left, seconds_left, msg = http_check.check_cert_expiration(instance, 10, cert_path, check_hostname)
+    status, days_left, seconds_left, msg = http_check.check_cert_expiration(instance, 10, cert_path)
     assert status == AgentCheck.OK
     assert days_left > 0
     assert seconds_left > 0
 
     # bad hostname
     instance = {'url': 'https://wronghost.mock/'}
-    status, days_left, seconds_left, msg = http_check.check_cert_expiration(instance, 10, cert_path, check_hostname)
+    status, days_left, seconds_left, msg = http_check.check_cert_expiration(instance, 10, cert_path)
     assert status == AgentCheck.CRITICAL
     assert days_left == 0
     assert seconds_left == 0
@@ -46,14 +45,14 @@ def test_check_cert_expiration(http_check):
 
     # site is down
     instance = {'url': 'https://this.does.not.exist.foo'}
-    status, days_left, seconds_left, msg = http_check.check_cert_expiration(instance, 10, cert_path, check_hostname)
+    status, days_left, seconds_left, msg = http_check.check_cert_expiration(instance, 10, cert_path)
     assert status == AgentCheck.CRITICAL
     assert days_left == 0
     assert seconds_left == 0
 
     # cert expired
     instance = {'url': 'https://expired.mock/'}
-    status, days_left, seconds_left, msg = http_check.check_cert_expiration(instance, 10, cert_path, check_hostname)
+    status, days_left, seconds_left, msg = http_check.check_cert_expiration(instance, 10, cert_path)
     assert status == AgentCheck.CRITICAL
     assert days_left == 0
     assert seconds_left == 0
@@ -61,28 +60,28 @@ def test_check_cert_expiration(http_check):
     # critical in days
     days_critical = 200
     instance = {'url': 'https://valid.mock/', 'days_critical': days_critical}
-    status, days_left, seconds_left, msg = http_check.check_cert_expiration(instance, 10, cert_path, check_hostname)
+    status, days_left, seconds_left, msg = http_check.check_cert_expiration(instance, 10, cert_path)
     assert status == AgentCheck.CRITICAL
     assert 0 < days_left < days_critical
 
     # critical in seconds (ensure seconds take precedence over days config)
     seconds_critical = days_critical * 24 * 3600
     instance = {'url': 'https://valid.mock/', 'days_critical': 0, 'seconds_critical': seconds_critical}
-    status, days_left, seconds_left, msg = http_check.check_cert_expiration(instance, 10, cert_path, check_hostname)
+    status, days_left, seconds_left, msg = http_check.check_cert_expiration(instance, 10, cert_path)
     assert status == AgentCheck.CRITICAL
     assert 0 < seconds_left < seconds_critical
 
     # warning in days
     days_warning = 200
     instance = {'url': 'https://valid.mock/', 'days_warning': days_warning}
-    status, days_left, seconds_left, msg = http_check.check_cert_expiration(instance, 10, cert_path, check_hostname)
+    status, days_left, seconds_left, msg = http_check.check_cert_expiration(instance, 10, cert_path)
     assert status == AgentCheck.WARNING
     assert 0 < days_left < days_warning
 
     # warning in seconds (ensure seconds take precedence over days config)
     seconds_warning = days_warning * 24 * 3600
     instance = {'url': 'https://valid.mock/', 'days_warning': 0, 'seconds_warning': seconds_warning}
-    status, days_left, seconds_left, msg = http_check.check_cert_expiration(instance, 10, cert_path, check_hostname)
+    status, days_left, seconds_left, msg = http_check.check_cert_expiration(instance, 10, cert_path)
     assert status == AgentCheck.WARNING
     assert 0 < seconds_left < seconds_warning
 
